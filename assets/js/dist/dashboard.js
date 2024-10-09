@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcreator_lms=self.webpackChunkcreator_lms||[]).push([[945],{3909:(e,t,a)=>{a.r(t),a.d(t,{default:()=>c});const c=function(){return React.createElement(React.Fragment,null,React.createElement("p",null,"Dashboard"))}}}]);

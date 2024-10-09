@@ -1,0 +1,234 @@
+<?php
+
+namespace CreatorLms\Abstracts;
+
+use CreatorLms\Assets\AssetLoader;
+
+defined( 'ABSPATH' ) || exit();
+
+/**
+ * Assets abstract class
+ *
+ * @package CreatorLms\Abstracts
+ * @since 1.0.0
+ */
+abstract class Assets {
+
+	/**
+	 * Scripts array
+	 *
+	 * @var array $scripts
+	 * @since 1.0.0
+	 */
+	protected array $scripts = [];
+
+	/**
+	 * Styles array
+	 *
+	 * @var array $styles
+	 * @since 1.0.0
+	 */
+	protected array $styles = [];
+
+
+	/**
+	 * Script data
+	 *
+	 * @var array $script_data
+	 * @since 1.0.0
+	 */
+	protected array $script_data = [];
+
+	/**
+	 * Localize scripts
+	 *
+	 * @var array $localize_scripts
+	 * @since 1.0.0
+	 */
+	public $localize_scripts = [];
+
+	/**
+	 * Enqueue assets
+	 *
+	 * @since 1.0.0
+	 */
+	public function __construct() {
+		$this->set_scripts();
+		$this->set_styles();
+		if ( is_admin() ) {
+			add_action('admin_enqueue_scripts', array( $this, 'enqueue_assets' ));
+			add_action( 'admin_print_scripts', array( $this, 'localize_printed_admin_scripts' ), 5 );
+		} else {
+			add_action('wp_enqueue_scripts', array( $this, 'enqueue_assets' ));
+			add_action('wp_print_scripts', array( $this, 'localize_printed_scripts' ));
+		}
+	}
+
+	/**
+	 * Register assets
+	 *
+	 * @since 1.0.0
+	 */
+	public function register_scripts( $screen_id ): void {
+		$scrips = $this->get_scripts();
+		foreach ( $scrips as $handle => $script ) {
+			if ( ! $script instanceof AssetLoader ) {
+				continue;
+			}
+
+			$should_enqueue = $this->should_enqueue( $handle, $screen_id, $script->screens ) ;
+			if ( ! $should_enqueue ) {
+				continue;
+			}
+			wp_register_script( $handle, $script->src, $script->deps, $script->version, $script->in_footer );
+			wp_enqueue_script($handle);
+		}
+	}
+
+
+	/**
+	 * Register styles
+	 *
+	 * @since 1.0.0
+	 */
+	public function register_styles( $screen_id ): void {
+		$styles = $this->get_styles();
+		foreach ( $styles as $handle => $style ) {
+			if ( ! $style instanceof AssetLoader ) {
+				continue;
+			}
+
+			$should_enqueue = $this->should_enqueue( $handle, $screen_id, $style->screens ) ;
+			if ( ! $should_enqueue ) {
+				continue;
+			}
+
+			wp_register_style( $handle, $style->src, $style->deps, $style->version );
+			wp_enqueue_style($handle);
+		}
+	}
+
+	/**
+	 * Enqueue assets
+	 *
+	 * @since 1.0.0
+	 */
+	public abstract function enqueue_assets();
+
+
+	public function set_scripts(): void {
+		$this->scripts = [];
+	}
+
+
+	public function set_styles(): void {
+		$this->styles = [];
+	}
+
+	/**
+	 * Get scripts
+	 *
+	 * @return array
+	 * @since 1.0.0
+	 */
+	public function get_scripts(): array {
+		return $this->scripts;
+	}
+
+	/**
+	 * Get script data
+	 *
+	 * @return array
+	 * @since 1.0.0
+	 */
+	public function get_script_data( $handle ): array|bool {
+		return $this->script_data;
+	}
+
+	/**
+	 * Get styles
+	 *
+	 * @return array
+	 * @since 1.0.0
+	 */
+	public function get_styles(): array {
+		return $this->styles;
+	}
+
+
+	/**
+	 * Should enqueue assets
+	 *
+	 * @param $handle
+	 * @param $screen_id
+	 * @param $screens
+	 * @return bool
+	 *
+	 * @since 1.0.0
+	 */
+	public function should_enqueue( $handle, $screen_id, $screens ): bool {
+		$should_load = false;
+		if ( ! empty( $screens ) ) {
+			$should_load = in_array( $screen_id, $screens );
+		} else {
+			$should_load = true;
+		}
+
+		return $should_load;
+	}
+
+
+	/**
+	 * Localize printed admin scripts
+	 *
+	 * @since 1.0.0
+	 */
+	public function localize_printed_admin_scripts(): void {
+		foreach ( $this->scripts as $handle => $script ) {
+			$this->localize_script( $handle );
+		}
+	}
+
+
+	/**
+	 * Localize printed scripts
+	 *
+	 * @since 1.0.0
+	 */
+	public function localize_printed_scripts(): void {
+		foreach ( $this->scripts as $handle => $script ) {
+			$this->localize_script( $handle );
+		}
+	}
+
+
+	/**
+	 * Localize script
+	 *
+	 * @param $handle
+	 * @since 1.0.0
+	 */
+	private function localize_script( $handle ): void {
+		if ( ! in_array( $handle, $this->localize_scripts, true ) && wp_script_is( $handle ) ) {
+			$data = $this->get_script_data( $handle );
+			if ( ! $data ) {
+				return;
+			}
+			$name                        = str_replace( '-', '_', $handle ) . '_params';
+			$this->localize_scripts[] = $handle;
+			wp_localize_script( $handle, $name, apply_filters( $name, $data ) );
+		}
+	}
+
+
+	/**
+	 * Get current screen id
+	 *
+	 * @return false|string
+	 * @since 1.0.0
+	 */
+	public function get_screen_id(): false|string {
+		global $current_screen;
+		return $current_screen ? $current_screen->id : false;
+	}
+}

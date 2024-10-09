@@ -1,0 +1,22 @@
+{
+    "name": "coderex/ecommerce",
+    "description": "E-Commerce module",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "CodeRex\\Ecommerce\\": "includes/"
+        },
+		"classmap": [
+			"includes/Gateways/OfflineGateway.php",
+			"includes/Gateways/PaypalGateway.php"
+		]
+    },
+    "authors": [
+        {
+            "name": "Code Rex"
+        }
+    ],
+    "require": {
+        "woocommerce/action-scheduler": "^3.8"
+    }
+}
