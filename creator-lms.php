@@ -3,7 +3,7 @@
  * Plugin Name:     Creator LMS
  * Plugin URI:      https://coderex.co
  * Description:     All in one LMS solution for Coaches
- * Version:         1.0.1
+ * Version:         1.0.2
  * Author:          Code Rex
  * Author URI:      https://coderex.co
  * Text Domain:     creator-lms
